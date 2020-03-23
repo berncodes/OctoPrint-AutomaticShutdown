@@ -24,6 +24,8 @@ class AutomaticshutdownPlugin(octoprint.plugin.TemplatePlugin,
                 self._timeout_value = None
 		self._abort_timer = None
 		self._wait_for_timelapse_timer = None
+		self.custom_CMD_Enabled = False
+		self.custom_CMD = ""
 
         def initialize(self):
                 self.abortTimeout = self._settings.get_int(["abortTimeout"])
@@ -36,6 +38,14 @@ class AutomaticshutdownPlugin(octoprint.plugin.TemplatePlugin,
                 self._logger.debug("lastCheckBoxValue: %s" % self.lastCheckBoxValue)
                 if self.rememberCheckBox:
                         self._automatic_shutdown_enabled = self.lastCheckBoxValue
+
+                self.custom_CMD_Enabled = self._settings.get_boolean(["custom_CMD_Enabled"])
+                self._logger.debug("custom_CMD_Enabled: %s" % self.custom_CMD_Enabled)
+
+                self.custom_CMD = self._settings.get(["custom_CMD"])
+                self._logger.debug("custom_CMD: %s" % self.custom_CMD)
+                
+
                 
 	def get_assets(self):
 		return dict(js=["js/automaticshutdown.js"])
@@ -153,7 +163,12 @@ class AutomaticshutdownPlugin(octoprint.plugin.TemplatePlugin,
                         self._shutdown_system()
 
 	def _shutdown_system(self):
-		shutdown_command = self._settings.global_get(["server", "commands", "systemShutdownCommand"])
+                self._logger.info("Starting Shutdown Process, Custom Command is: {custom}".format(custom=self.custom_CMD_Enabled))
+                if self.custom_CMD_Enabled:
+                        shutdown_command = self.custom_CMD
+                else:
+                        shutdown_command = self._settings.global_get(["server", "commands", "systemShutdownCommand"])
+                        
 		self._logger.info("Shutting down system with command: {command}".format(command=shutdown_command))
 		try:
 			import sarge
@@ -175,6 +190,8 @@ class AutomaticshutdownPlugin(octoprint.plugin.TemplatePlugin,
                 self.abortTimeout = self._settings.get_int(["abortTimeout"])
                 self.rememberCheckBox = self._settings.get_boolean(["rememberCheckBox"])
                 self.lastCheckBoxValue = self._settings.get_boolean(["lastCheckBoxValue"])
+                self.custom_CMD_Enabled = self._settings.get_boolean(["custom_CMD_Enabled"])
+                self.custom_CMD = self._settings.get(["custom_CMD"])
 
         def get_update_information(self):
                 return dict(
